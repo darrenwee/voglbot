@@ -5,6 +5,7 @@ import time
 import pprint
 import logging
 import telepot
+from fuzzywuzzy import fuzz # for fuzzy string matching
 
 import redis
 db = redis.Redis(
@@ -50,6 +51,38 @@ def deny(chat_id):
 
 def add(name, house):
 	print 'Adding %s from %s' % (name, house)
+
+def remove(name, house):
+	print 'Removing %s from %s' % (name, house)
+
+def getStrength(house):
+
+""""
+	prints out every name from <house> with <mode>
+	
+	<house>:
+		- green
+		- black
+		- purple
+		- blue
+		- red
+		- orange
+
+	<mode>:
+		- present
+		- absent
+		- all
+""""
+def enumerate(house, mode):
+	
+
+""""
+	for checking in and out
+""""
+def updateAttendance(name, house, direction):
+	# update database
+
+def fuzzyMatch(name):
 
 def handle(msg):
 	#pprint.pprint(msg)

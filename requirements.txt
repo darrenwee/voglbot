@@ -1,0 +1,4 @@
+telepot
+fuzzywuzzy
+logging
+redis

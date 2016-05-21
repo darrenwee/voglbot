@@ -18,14 +18,15 @@ from authorized import * 		# authorized user management
 from pymongo import *
 # establish connection to mongodb server
 try:
-	mconn = MongoClient('monty', 27017)
+	connection = MongoClient('monty', 27017)
 	logger.info("Successfully connected to MongoDB daemon")
 except pymongo.errors.ConnectionFailure, e:
 	logger.error("Failed to connect to MongoDB: %s" % e)
 	logger.error("VOGLBot exiting!")
 	sys.exit(1)
 
-mdb = mconn['vogldb']
+db = connection['primary']
+students = db['students']
 
 """
 	$ python voglbot.py <telegram-bot-token>
@@ -60,7 +61,20 @@ def helper(requester):
 	bot.sendMessage(requester, "/add")
 
 def add(house, name, requester):
+	# add new person to database
+	timestamp = str(datetime.datetime.now())
+
+	# return feedback
 	logger.info('%s: Adding %s from %s' % (whoIs(requester), name, house))
+	student = {
+		"name": name,
+		"house": house,
+		"status": "absent",
+		"statuslog": ["initial registration at"+timestamp],
+		"medical": ""
+	}
+	students.insert_one(student)
+	bot.sendMessage(requester, 'Successfully added \'%s\' of \'%s\' house into database.' % (name, house))
 	return
 
 def remove(house, name, requester):
@@ -68,12 +82,11 @@ def remove(house, name, requester):
 	report('WARNING: %s from %s house was removed from database.' % (name, house))
 	return
 
-def getStrength(house):
+def getStrength(house, mode):
 	logger.info('Returning strength for %s house' % house)
 	return
 
 def enumerate(house, mode):
-	#modes = [present absent total]
 	logger.info('Enumerating %s for %s house' % (mode, house))
 	return
 
@@ -84,6 +97,15 @@ def update(house, direction, name):
 def fuzzyMatch(name):
 	# only used when a query fails to find a name
 	# returns suggestions to user for close name matches
+	return
+
+def find(house, name, requester):
+	logger.info('%s: Finding \'%s\'' % (whoIs(requester), name))
+	student = students.find({"name": name, "house": house})
+	bot.sendMessage(requester, student)
+	return
+
+def toString(student):
 	return
 
 # command groups
@@ -97,7 +119,7 @@ def handle(msg):
 	msg_type, chat_type, chat_id = telepot.glance(msg)
 
 	command = msg['text'].strip().lower()
-	logger.info('Received command: %s from %s' % (command, chat_id))
+	logger.info('Received command: %s from %s' % (command, whoIs(chat_id)))
 
 	if msg_type != 'text':
 		bot.sendMessage(chat_id, "I can only receive text messages. Try /help")
@@ -124,10 +146,7 @@ def handle(msg):
 			return
 
 		if commandword == '/add':
-			# add new person to database
-			reply = 'Adding \'%s\' of \'%s\' house into database.' % (name, house)
-			logger.info(reply)
-			bot.sendMessage(chat_id, reply)
+			add(house, name, chat_id)
 		elif commandword == '/remove':
 			# remove existing person from database
 			reply = 'Removing \'%s\' of \'%s\' house from database.' % (name, house)

@@ -6,12 +6,18 @@ import pprint
 import logging
 import telepot
 from fuzzywuzzy import fuzz # for fuzzy string matching
+import re
 
 import redis
 db = redis.Redis(
 	host = 'localhost',
 	port = 6379
 )
+
+# load auxiliary data
+from voglogger import * 		# logger management
+from settings_secret import * 	# telegram bot API token
+from authorized import * 		# authorized user management
 
 """
 	$ python voglbot.py <telegram-bot-token>
@@ -25,48 +31,58 @@ db = redis.Redis(
 	kill program with Ctrl-C
 """
 
-# load auxiliary data
-from voglogger import * 		# logger management
-from settings_secret import * 	# telegram bot API token
-from authorized import * 		# authorized user management
-
 def report(message):
-	for admin in admins:
-		bot.sendMessage(admin, message)
+	for admin in getIDs(admins):
+		bot.sendMessage(admin, '[Admin] ' + message)
 		logger.warning('Sent \'%s\' to admin %s' % (message, admin))
 	return
 
 def deny(chat_id):
-		# print to console log
-		logger.error('Chat ID %s was denied access.' % chat_id)
+	# print to console log
+	logger.error('Chat ID %s was denied access.' % chat_id)
 
-		# scold unauthorized user
-		bot.sendMessage(chat_id, "You are not authorized to use this bot; this incident has been reported. Contact Darren at 92328340 if this is a mistake.")
-		
-		# report incident to admins (listed in authorized.py)
-		report("WARNING: chat ID %s was denied access" % chat_id)
-		return
+	# scold unauthorized user
+	bot.sendMessage(chat_id, "You are not authorized to use this bot; this incident has been reported. Contact Darren at 92328340 if this is a mistake.")
 
-def add(name, house):
-	print 'Adding %s from %s' % (name, house)
+	# report incident to admins (listed in authorized.py)
+	report("WARNING: chat ID %s was denied access" % chat_id)
 	return
 
-def remove(name, house):
-	print 'Removing %s from %s' % (name, house)
+def helper(requester):
+	bot.sendMessage(requester, "/add")
+
+def add(house, name, requester):
+	logger.info('%s: Adding %s from %s' % (whoIs(requester), name, house))
+	return
+
+def remove(house, name, requester):
+	logger.info('Removing %s from %s' % (name, house))
+	report('WARNING: %s from %s house was removed from database.' % (name, house))
 	return
 
 def getStrength(house):
+	logger.info('Returning strength for %s house' % house)
 	return
 
 def enumerate(house, mode):
+	#modes = [present absent total]
+	logger.info('Enumerating %s for %s house' % (mode, house))
 	return
 
-def updateAttendance(name, house, direction):
+def update(house, direction, name):
 	# update database
 	return
 
 def fuzzyMatch(name):
+	# only used when a query fails to find a name
+	# returns suggestions to user for close name matches
 	return
+
+# command groups
+register_type = ['/add', '/remove']
+register_re = re.compile('(/[a-z]+)\s+([a-z]+)\s+(.+)', re.IGNORECASE) # /<command> <house> <name>
+
+houses = ['green', 'black', 'purple', 'blue', 'red', 'orange', 'all']
 
 def handle(msg):
 	#pprint.pprint(msg)
@@ -76,16 +92,39 @@ def handle(msg):
 	logger.info('Received command: %s from %s' % (command, chat_id))
 
 	if msg_type != 'text':
+		bot.sendMessage(chat_id, "I can only receive text messages. Try /help")
 		return
 	
-	if chat_id not in authorized:
+	if chat_id not in getIDs(authorized):
 		deny(chat_id)
 		return
 
 	if command == '/hello':
 		bot.sendMessage(chat_id, "Hi!")
+	elif command == '/help':
+		helper(chat_id)
+	elif any(command.startswith(reg) for reg in register_type):
+		# command is a register type
+		reg_command = re.match(register_re, command)
+		commandword = reg_command.group(1)
+		house = reg_command.group(2)
+		name = reg_command.group(3)
 
-	return
+		# input sanitization
+		if house not in houses:
+			bot.sendMessage(chat_id, 'No such house.')
+			return
+
+		if commandword == '/add':
+			reply = 'Adding \'%s\' of \'%s\' house into database.' % (name, house)
+			logger.info(reply)
+			bot.sendMessage(chat_id, reply)
+		elif commandword == '/remove':
+			reply = 'Removing \'%s\' of \'%s\' house from database.' % (name, house)
+			logger.info(reply)
+			bot.sendMessage(chat_id, reply)
+	else:
+		bot.sendMessage(chat_id, "Try /help for a list of commands")
 
 # start the bot
 bot = telepot.Bot(TOKEN)

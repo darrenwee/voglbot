@@ -13,6 +13,8 @@ address_book = {
 	'Yantyng'	: 112279032,
 }
 
+rev_book = dict((v,k) for k,v in address_book.iteritems())
+
 ################################################################
 ## only authorized house and FOP comm members can use the bot ##
 ##   remember to respect PDPA and need-to-know basis of info  ##
@@ -34,11 +36,11 @@ fopcomm = []
 safety = []
 
 # all authorized users are stored here
-#authorized = admins + vogls + cogls + fopcomm + safety
-authorized = []
+authorized = admins + vogls + cogls + fopcomm + safety
+#authorized = []
 
 def getIDs(group):
-	logger.info('IDs for %s were requested' % group)
+	#logger.info('IDs for %s were requested' % group)
 	IDs = []
 	for person in group:
 		if address_book.has_key(person):
@@ -46,3 +48,9 @@ def getIDs(group):
 		else:
 			logger.warning('%s was not found in address book.' % person)
 	return IDs
+
+def whoIs(target_id):
+	if rev_book.has_key(target_id):
+		return rev_book.key(target_id)
+	else:
+		logger.warning('%s was not found in address book.' % target_id)

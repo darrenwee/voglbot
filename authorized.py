@@ -30,7 +30,7 @@ vogls = ['Darren']
 cogls = []
 
 # 			Andrea Yuchuan	Yantyng	Shaoyang
-fopcomm = []
+fopcomm = ['Yantyng']
 
 #			Raag	Lynette	Leon	Dexter	Elisabeth	Zhihao	
 safety = []

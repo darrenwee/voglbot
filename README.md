@@ -9,13 +9,6 @@ Python
 
 `pip` package manager
 
-`redis-server`
+`mongodb`
 
 ## Supported Functions
-| Command                | Description                            |
-|------------------------|----------------------------------------|
-|  /add <house> <name>   | add a new freshman <name> from <house> |
-| /remove <house> <name> | remove a freshman <name> from <house>  |
-|                        |                                        |
-|                        |                                        |
-|                        |                                        |

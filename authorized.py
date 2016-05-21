@@ -51,6 +51,6 @@ def getIDs(group):
 
 def whoIs(target_id):
 	if rev_book.has_key(target_id):
-		return rev_book.key(target_id)
+		return rev_book.get(target_id)
 	else:
 		logger.warning('%s was not found in address book.' % target_id)

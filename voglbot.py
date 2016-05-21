@@ -2,22 +2,30 @@
 
 import sys
 import time
+import datetime
 import pprint
 import logging
 import telepot
-from fuzzywuzzy import fuzz # for fuzzy string matching
 import re
-
-import redis
-db = redis.Redis(
-	host = 'localhost',
-	port = 6379
-)
+#from fuzzywuzzy import fuzz # for fuzzy string matching
 
 # load auxiliary data
 from voglogger import * 		# logger management
 from settings_secret import * 	# telegram bot API token
 from authorized import * 		# authorized user management
+
+
+from pymongo import *
+# establish connection to mongodb server
+try:
+	mconn = MongoClient('monty', 27017)
+	logger.info("Successfully connected to MongoDB daemon")
+except pymongo.errors.ConnectionFailure, e:
+	logger.error("Failed to connect to MongoDB: %s" % e)
+	logger.error("VOGLBot exiting!")
+	sys.exit(1)
+
+mdb = mconn['vogldb']
 
 """
 	$ python voglbot.py <telegram-bot-token>
@@ -104,7 +112,7 @@ def handle(msg):
 	elif command == '/help':
 		helper(chat_id)
 	elif any(command.startswith(reg) for reg in register_type):
-		# command is a register type
+		### command is a register type ###
 		reg_command = re.match(register_re, command)
 		commandword = reg_command.group(1)
 		house = reg_command.group(2)
@@ -116,10 +124,12 @@ def handle(msg):
 			return
 
 		if commandword == '/add':
+			# add new person to database
 			reply = 'Adding \'%s\' of \'%s\' house into database.' % (name, house)
 			logger.info(reply)
 			bot.sendMessage(chat_id, reply)
 		elif commandword == '/remove':
+			# remove existing person from database
 			reply = 'Removing \'%s\' of \'%s\' house from database.' % (name, house)
 			logger.info(reply)
 			bot.sendMessage(chat_id, reply)

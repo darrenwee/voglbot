@@ -54,3 +54,4 @@ def whoIs(target_id):
 		return rev_book.get(target_id)
 	else:
 		logger.warning('%s was not found in address book.' % target_id)
+		return target_id

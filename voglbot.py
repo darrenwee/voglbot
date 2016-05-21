@@ -13,10 +13,6 @@ db = redis.Redis(
 	port = 6379
 )
 
-import logging
-logging.basicConfig(level=logging.INFO, format='%(asctime)s: %(message)s')
-logger = logging.getLogger()
-
 """
 	$ python voglbot.py <telegram-bot-token>
 
@@ -30,17 +26,19 @@ logger = logging.getLogger()
 """
 
 # load auxiliary data
+from voglogger import * 		# logger management
 from settings_secret import * 	# telegram bot API token
 from authorized import * 		# authorized user management
 
 def report(message):
 	for admin in admins:
 		bot.sendMessage(admin, message)
+		logger.warning('Sent \'%s\' to admin %s' % (message, admin))
 	return
 
 def deny(chat_id):
 		# print to console log
-		print 'WARNING: chat ID %s was denied access.' % chat_id
+		logger.error('Chat ID %s was denied access.' % chat_id)
 
 		# scold unauthorized user
 		bot.sendMessage(chat_id, "You are not authorized to use this bot; this incident has been reported. Contact Darren at 92328340 if this is a mistake.")
@@ -51,45 +49,31 @@ def deny(chat_id):
 
 def add(name, house):
 	print 'Adding %s from %s' % (name, house)
+	return
 
 def remove(name, house):
 	print 'Removing %s from %s' % (name, house)
+	return
 
 def getStrength(house):
+	return
 
-""""
-	prints out every name from <house> with <mode>
-	
-	<house>:
-		- green
-		- black
-		- purple
-		- blue
-		- red
-		- orange
-
-	<mode>:
-		- present
-		- absent
-		- all
-""""
 def enumerate(house, mode):
-	
+	return
 
-""""
-	for checking in and out
-""""
 def updateAttendance(name, house, direction):
 	# update database
+	return
 
 def fuzzyMatch(name):
+	return
 
 def handle(msg):
 	#pprint.pprint(msg)
 	msg_type, chat_type, chat_id = telepot.glance(msg)
 
 	command = msg['text'].strip().lower()
-	print 'Received command: %s from %s' % (command, chat_id)
+	logger.info('Received command: %s from %s' % (command, chat_id))
 
 	if msg_type != 'text':
 		return
@@ -101,10 +85,12 @@ def handle(msg):
 	if command == '/hello':
 		bot.sendMessage(chat_id, "Hi!")
 
+	return
+
 # start the bot
 bot = telepot.Bot(TOKEN)
 bot.message_loop(handle)
-print ('Listening ...')
+logger.info('VOGLBot is listening ...')
 
 while 1:
 	time.sleep(5)

@@ -18,4 +18,5 @@ cogls = []
 fopcomm = [112279032]
 
 # all authorized users are stored here
-authorized = admins + vogls + cogls + fopcomm
+#authorized = admins + vogls + cogls + fopcomm
+authorized = []

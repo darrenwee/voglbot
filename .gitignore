@@ -1,3 +1,4 @@
 *.swp
 *.pyc
 settings_secret.py
+voglbot.log

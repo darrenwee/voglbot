@@ -33,10 +33,6 @@ students = db['students']
 
 	VOGLBot: Every VOGL's favorite assistant
 
-	accepted commands:
-		/add <name>,<house>
-		/remove <name>,<house>
-
 	kill program with Ctrl-C
 """
 
@@ -57,22 +53,19 @@ def deny(chat_id):
 	report("WARNING: chat ID %s was denied access" % chat_id)
 	return
 
-def helper(requester):
-	bot.sendMessage(requester, "/add")
-
 def add(house, name, requester):
 	# add new person to database
 	timestamp = str(datetime.datetime.now())
 
 	# return feedback
-	logger.info('%s: Adding %s from %s' % (whoIs(requester), name, house))
+	logger.info('%s: Adding \'%s\' from \'%s\'' % (whoIs(requester), name, house))
 	student = {
 		"name": name,
 		"house": house,
 		"status": "present",
 		"statuslog": ["initial registration at "+timestamp],
 		"medical": "",
-		"addedby": whoIs(requester) + "(" + chat_id + ")"
+		"addedby": whoIs(requester) + "(" + str(requester) + ")"
 	}
 
 	students.insert_one(student)
@@ -81,11 +74,19 @@ def add(house, name, requester):
 
 def remove(house, name, requester):
 	logger.info('Removing %s from %s' % (name, house))
-	report('WARNING: %s from %s house was removed from database.' % (name, house))
+	report('WARNING: \'%s\' from \'%s\' house was removed from database.' % (name, house))
 	return
 
-def getStrength(house, mode):
-	logger.info('Returning strength for %s house' % house)
+def getStrength(house, mode, requester):
+	logger.info('Returning strength for \'%s\' house' % house)
+	
+	if mode in ['present', 'absent']:
+		strength = students.count( {"house": house, "status": mode} )
+	elif mode in ['total']:
+		strength = students.count( {"house": house} )
+
+	reply = 'Strength for \'%s\' in \'%s\' house is %d' % (mode, house, strength)
+	bot.sendMessage(requester, reply)
 	return
 
 def enumerate(house, mode):
@@ -103,18 +104,23 @@ def fuzzyMatch(name):
 
 def find(house, name, requester):
 	logger.info('%s: Finding \'%s\'' % (whoIs(requester), name))
-	target = students.find_one( {"name": name, "house": house} )
+	target = students.find_one( {"name": name, "house": house} ) # perform query
 
-	# decide what info to send back
+	# what info to send back
 	details = ['name', 'house', 'status']
 	reply = ""
 	for detail in details:
 		reply += detail + ": " + target[detail] + "\n"
+
 	bot.sendMessage(requester, reply)
 	return
 
 def toString(student):
 	return
+
+def sos(requester):
+	for aider in safety:
+		bot.sendMessage('SOS by %s' % whoIs(requester))
 
 # command groups
 register_type = ['/add', '/remove', '/find']
@@ -123,13 +129,14 @@ register_re = re.compile('(/[a-z]+)\s+([a-z]+)\s+(.+)', re.IGNORECASE) # /<comma
 help_re = re.compile('(/help)\s+(.+)', re.IGNORECASE)
 
 houses = ['green', 'black', 'purple', 'blue', 'red', 'orange', 'all']
+mode = ['present', 'absent', 'total']
 
 def handle(msg):
 	#pprint.pprint(msg)
 	msg_type, chat_type, chat_id = telepot.glance(msg)
 
 	command = msg['text'].strip().lower()
-	logger.info('Received message: \'%s\' from %s' % (command, whoIs(chat_id)))
+	logger.info('%s: received message \'%s\'' % (whoIs(chat_id), command) )
 
 	if msg_type != 'text':
 		bot.sendMessage(chat_id, "I can only receive text messages. Try /help")

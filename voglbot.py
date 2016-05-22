@@ -84,6 +84,9 @@ def getStrength(house, mode, requester):
 		strength = students.count( {"house": house, "status": mode} )
 	elif mode in ['total']:
 		strength = students.count( {"house": house} )
+	else:
+		bot.sendMessage(requester, 'Invalid mode! Mode can be \'present\', \'absent\' or \'total\', try \'/help str\' for more help!')
+		return
 
 	reply = 'Strength for \'%s\' in \'%s\' house is %d' % (mode, house, strength)
 	bot.sendMessage(requester, reply)
@@ -110,7 +113,7 @@ def find(house, name, requester):
 	details = ['name', 'house', 'status']
 	reply = ""
 	for detail in details:
-		reply += detail + ": " + target[detail] + "\n"
+		reply += detail.title() + ": " + target[detail].title() + "\n"
 
 	bot.sendMessage(requester, reply)
 	return
@@ -123,7 +126,7 @@ def sos(requester):
 		bot.sendMessage('SOS by %s' % whoIs(requester))
 
 # command groups
-register_type = ['/add', '/remove', '/find']
+register_type = ['/add', '/remove', '/find', '/str']
 register_re = re.compile('(/[a-z]+)\s+([a-z]+)\s+(.+)', re.IGNORECASE) # /<command> <house> <name>
 
 help_re = re.compile('(/help)\s+(.+)', re.IGNORECASE)
@@ -136,7 +139,7 @@ def handle(msg):
 	msg_type, chat_type, chat_id = telepot.glance(msg)
 
 	command = msg['text'].strip().lower()
-	logger.info('%s: received message \'%s\'' % (whoIs(chat_id), command) )
+	logger.info('%s: Received message \'%s\'' % (whoIs(chat_id), command) )
 
 	if msg_type != 'text':
 		bot.sendMessage(chat_id, "I can only receive text messages. Try /help")
@@ -174,6 +177,9 @@ def handle(msg):
 			bot.sendMessage(chat_id, reply)
 		elif commandword == '/find':
 			find(house, name, chat_id)
+		elif commandword == '/str':
+			# here, name refers to mode
+			getStrength(house, name, chat_id)
 	else:
 		bot.sendMessage(chat_id, "Try /help for a list of commands")
 

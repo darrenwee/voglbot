@@ -7,6 +7,7 @@
 commandList = {
 	'add': 'usage: /add <house> <name>\nadd a new freshman <name> from <house>',
 	'remove': 'usage: /remove <house> <name>\nremoves a freshman <name> from <house>',
+	'find': 'usage: /find <house> <name>\nfinds a freshman <name> from <house>',
 }
 
 def getHelp(command):

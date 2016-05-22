@@ -13,7 +13,7 @@ import re
 from voglogger import * 		# logger management
 from settings_secret import * 	# telegram bot API token
 from authorized import * 		# authorized user management
-
+from helper import *			# /help documentation
 
 from pymongo import *
 # establish connection to mongodb server
@@ -69,10 +69,12 @@ def add(house, name, requester):
 	student = {
 		"name": name,
 		"house": house,
-		"status": "absent",
-		"statuslog": ["initial registration at"+timestamp],
-		"medical": ""
+		"status": "present",
+		"statuslog": ["initial registration at "+timestamp],
+		"medical": "",
+		"addedby": whoIs(requester) + "(" + chat_id + ")"
 	}
+
 	students.insert_one(student)
 	bot.sendMessage(requester, 'Successfully added \'%s\' of \'%s\' house into database.' % (name, house))
 	return
@@ -101,16 +103,24 @@ def fuzzyMatch(name):
 
 def find(house, name, requester):
 	logger.info('%s: Finding \'%s\'' % (whoIs(requester), name))
-	student = students.find({"name": name, "house": house})
-	bot.sendMessage(requester, student)
+	target = students.find_one( {"name": name, "house": house} )
+
+	# decide what info to send back
+	details = ['name', 'house', 'status']
+	reply = ""
+	for detail in details:
+		reply += detail + ": " + target[detail] + "\n"
+	bot.sendMessage(requester, reply)
 	return
 
 def toString(student):
 	return
 
 # command groups
-register_type = ['/add', '/remove']
+register_type = ['/add', '/remove', '/find']
 register_re = re.compile('(/[a-z]+)\s+([a-z]+)\s+(.+)', re.IGNORECASE) # /<command> <house> <name>
+
+help_re = re.compile('(/help)\s+(.+)', re.IGNORECASE)
 
 houses = ['green', 'black', 'purple', 'blue', 'red', 'orange', 'all']
 
@@ -119,7 +129,7 @@ def handle(msg):
 	msg_type, chat_type, chat_id = telepot.glance(msg)
 
 	command = msg['text'].strip().lower()
-	logger.info('Received command: %s from %s' % (command, whoIs(chat_id)))
+	logger.info('Received message: \'%s\' from %s' % (command, whoIs(chat_id)))
 
 	if msg_type != 'text':
 		bot.sendMessage(chat_id, "I can only receive text messages. Try /help")
@@ -131,16 +141,19 @@ def handle(msg):
 
 	if command == '/hello':
 		bot.sendMessage(chat_id, "Hi!")
-	elif command == '/help':
-		helper(chat_id)
+	elif command.startswith('/help'):
+		help_command = re.match(help_re, command)
+		bot.sendMessage(chat_id, getHelp(help_command.group(2)))
 	elif any(command.startswith(reg) for reg in register_type):
+		##################################
 		### command is a register type ###
+		##################################
 		reg_command = re.match(register_re, command)
 		commandword = reg_command.group(1)
 		house = reg_command.group(2)
 		name = reg_command.group(3)
 
-		# input sanitization
+		# input sanitization for house field
 		if house not in houses:
 			bot.sendMessage(chat_id, 'No such house.')
 			return
@@ -152,6 +165,8 @@ def handle(msg):
 			reply = 'Removing \'%s\' of \'%s\' house from database.' % (name, house)
 			logger.info(reply)
 			bot.sendMessage(chat_id, reply)
+		elif commandword == '/find':
+			find(house, name, chat_id)
 	else:
 		bot.sendMessage(chat_id, "Try /help for a list of commands")
 

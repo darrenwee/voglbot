@@ -98,25 +98,48 @@ def getStrength(house, mode, requester):
 		reply = 'Total strength in \'%s\' house is %d' % (mode, house, total_strength)
 
 	bot.sendMessage(requester, reply)
-	logger.info('Replying \'%s\' to /str query by %s' % reply, whoIs(requester))
+	logger.info('Replying \'%s\' to /strength query by %s' % (reply, whoIs(requester)))
 	return
 
-def enumerate(house, mode, requester):
-	logger.info('Enumerating %s for %s house' % (mode, house))
+def getEnumerate(house, mode, requester):
+	logger.info('Enumerating \'%s\' for \'%s\' house' % (mode, house))
 
-	i = 1	
-	reply = ''
+	reply = 'Enumerating all \'%s\' in \'%s\'!\n\n' % (mode, house)
 	if mode in modes:
-		if mode in ['present', 'absent']:
-			# modal enumeration
+		if house == 'all':
+			if mode in ['present', 'absent']:
+				targetCursor = students.find( {'status': mode} )
+			elif mode == 'total':
+				targetCursor = students.find( {} )
 		else:
-			# total enumeration
+			if mode in ['present', 'absent']:
+				# modal enumeration
+				targetCursor = students.find( {'house': house, 'status': mode} )
+			elif mode == 'total':
+				# total enumeration
+				targetCursor = students.find( {'house': house} )
+
 	else:
-		bot.sendMessage(requester, 'Invalid mode! Mode can be \'present\', \'absent\' or \'total\', try \'/help str\' for more help!')
+		bot.sendMessage(requester, 'Invalid mode! Mode can be \'present\', \'absent\' or \'total\', try \'/help enumerate\' for more help!')
 		return
 
+	if targetCursor.count() == 0:
+		# no records found
+		reply += 'No records found.'
+	else:
+		# at least 1 record found
+		i = int(1)
+		for target in targetCursor:
+			if house == 'all':
+				# add house label if enumerating everyone from every house
+				reply += '%d. %s: %s, %s\n' %(i, target['name'].title(), target['house'].title(), target['status'].title())
+			else:
+				# omit house label if enumerating everyone from a specific house
+				reply += '%d. %s: %s\n' % (i, target['name'].title(), target['status'].title())
+			i += 1
+
 	bot.sendMessage(requester, reply)
-	logger.info('Replying \'%s\' to /enumerate query by %s' % reply, whoIs(requester))
+	logger.info('Replying \'%s\' to /enumerate query by %s' % (reply, whoIs(requester)))
 	return
 
 def update(house, direction, name):
@@ -149,7 +172,7 @@ def sos(requester):
 		bot.sendMessage('SOS by %s' % whoIs(requester))
 
 # command groups
-register_type = ['/add', '/remove', '/find', '/str']
+register_type = ['/add', '/remove', '/find', '/strength', '/enumerate']
 register_re = re.compile('(/[a-z]+)\s+([a-z]+)\s+(.+)', re.IGNORECASE) # /<command> <house> <name>
 
 iterator_type = ['/enumerate']
@@ -157,8 +180,10 @@ iterator_re = re.compile('(/[a-z]+)\s+([a-z]+)\s+([a-z]+)', re.IGNORECASE)
 
 help_re = re.compile('(/help)\s+(.+)', re.IGNORECASE)
 
-global houses = ['green', 'black', 'purple', 'blue', 'red', 'orange', 'all']
-global modes = ['present', 'absent', 'total']
+global houses
+houses = ['green', 'black', 'purple', 'blue', 'red', 'orange', 'all']
+global modes
+modes = ['present', 'absent', 'total']
 
 def handle(msg):
 	#pprint.pprint(msg)
@@ -203,10 +228,12 @@ def handle(msg):
 			bot.sendMessage(chat_id, reply)
 		elif commandword == '/find':
 			find(house, name, chat_id)
-		elif commandword == '/str':
+		elif commandword == '/strength':
 			# here, name refers to mode
 			getStrength(house, name, chat_id)
-		
+		elif commandword == '/enumerate':
+			# here, name refers to mode
+			getEnumerate(house, name, chat_id)
 	else:
 		bot.sendMessage(chat_id, 'Try /help for a list of commands')
 

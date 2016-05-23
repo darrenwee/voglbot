@@ -59,8 +59,8 @@ def getHelp(command):
 	return reply
 
 def naiveHelp():
-	reply = 'Commands available:'
+	reply = 'Commands available:\n'
 	for command in description.keys():
 		reply += command + '\n'
-	reply += 'Use \'/help <command>\' for more info'
+	reply += '\nUse \'/help <command>\' for more info'
 	return reply

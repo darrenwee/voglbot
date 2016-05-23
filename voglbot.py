@@ -205,9 +205,13 @@ def handle(msg):
 		deny(chat_id)
 		return
 
-	if command == '/hello':
-		bot.sendMessage(chat_id, 'Hi!')
+	if command.startswith('/hello'):
+		bot.sendMessage(chat_id, 'Hi! My name is VOGLBot!')
+	elif command == '/help':
+		# naive helper
+		bot.sendMessage(chat_id, naiveHelp())
 	elif command.startswith('/help'):
+		# specific helper
 		help_command = re.match(help_re, command)
 		bot.sendMessage(chat_id, getHelp(help_command.group(2)))
 	elif any(command.startswith(reg) for reg in register_type):

@@ -37,7 +37,7 @@ cogls = []
 fopcomm = ['Yantyng']
 
 #			Raag	Lynette	Leon	Dexter	Elisabeth	Zhihao	
-safety = ['Darren']
+safety = ['Darren', 'Yantyng']
 
 # all authorized users are stored here
 authorized = admins + vogls + cogls + fopcomm + safety

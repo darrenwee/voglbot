@@ -43,14 +43,16 @@ def report(message):
 	return
 
 def deny(chat_id):
+	reply = 'Chat ID \'%s\' was denied access.' % whoIs(chat_id)
+
 	# print to console log
-	logger.error('Chat ID \'%s\' was denied access.' % whoIs(chat_id))
+	logger.error(reply % whoIs(chat_id))
 
 	# scold unauthorized user
-	bot.sendMessage(chat_id, 'You are not authorized to use this bot; this incident has been reported. Contact Darren at 92328340 if this is a mistake.')
+	bot.sendMessage(chat_id, 'You cannot use this bot. Contact Darren at 92328340 if this is a mistake.')
 
 	# report incident to admins (listed in authorized.py)
-	report('WARNING: chat ID \'%s\' was denied access' % whoIs(chat_id))
+	report(reply)
 	return
 
 def add(house, name, requester):
@@ -74,8 +76,12 @@ def add(house, name, requester):
 	return
 
 def remove(house, name, requester):
-	logger.info('Removing %s from %s' % (name, house))
-	report('WARNING: \'%s\' from \'%s\' house was removed from database.' % (name, house))
+	reply = 'Removing \'%s\' of \'%s\' house from database.' % (name, house)
+	logger.info(whoIs(requester) + ': ' + reply)
+	report(whoIs(requester) + ': ' + reply)
+	bot.sendMessage(requester, reply)
+
+	# perform remove
 	return
 
 def getStrength(house, mode, requester):
@@ -86,7 +92,7 @@ def getStrength(house, mode, requester):
 		if mode in ['present', 'absent']:
 			mode_strength = students.count( {'house': house, 'status': mode} )
 	else:
-		bot.sendMessage(requester, 'Invalid mode! Mode can be \'present\', \'absent\' or \'total\', try \'/help str\' for more help!')
+		bot.sendMessage(requester, 'Invalid mode! Mode can be \'present\', \'absent\' or \'total\', try \'/help strength\' for more help!')
 		return
 
 	# query for total strength
@@ -118,7 +124,6 @@ def getEnumerate(house, mode, requester):
 			elif mode == 'total':
 				# total enumeration
 				targetCursor = students.find( {'house': house} )
-
 	else:
 		# throw error to user for invalid mode
 		bot.sendMessage(requester, 'Invalid mode! Mode can be \'present\', \'absent\' or \'total\', try \'/help enumerate\' for more help!')
@@ -131,7 +136,7 @@ def getEnumerate(house, mode, requester):
 		# at least 1 record found
 		i = int(1)
 
-		# enumerate in sorted order
+		# enumerate in sorted order: house, then name, then status
 		targetCursor.sort( [('house', 1), ('name', 1), ('status', 1)] )
 
 		for target in targetCursor:
@@ -184,7 +189,8 @@ def sos(message, requester):
 	# broadcast SOS to all first aiders
 	for aider in aiders:
 		bot.sendMessage(aider, reply)
-
+		logger.info('SOS broadcast to %s' % whoIs(aider))
+	
 # command groups
 register_type = ['/add', '/remove', '/find', '/strength', '/enumerate']
 register_re = re.compile('(/[a-z]+)\s+([a-z]+)\s+(.+)', re.IGNORECASE) # /<command> <house> <name>
@@ -192,8 +198,7 @@ register_re = re.compile('(/[a-z]+)\s+([a-z]+)\s+(.+)', re.IGNORECASE) # /<comma
 iterator_type = ['/enumerate']
 iterator_re = re.compile('(/[a-z]+)\s+([a-z]+)\s+([a-z]+)', re.IGNORECASE)
 
-help_re = re.compile('(/help)\s+(.+)', re.IGNORECASE)
-broadcast_re = re.compile('(/sos)\s*(.*)', re.IGNORECASE)
+message_re = re.compile('(/.+)\s+(.+)', re.IGNORECASE)
 
 global houses
 houses = ['green', 'black', 'purple', 'blue', 'red', 'orange', 'all']
@@ -210,23 +215,30 @@ def handle(msg):
 	if msg_type != 'text':
 		bot.sendMessage(chat_id, 'I can only receive text messages. Try /help')
 		return
-	
-	if chat_id not in getIDs(authorized):
+
+	# send description
+	# /start is the only command that non-authorized users can use
+	if command.startswith('/start'):
+		bot.sendMessage(chat_id, 'Hi! I\'m VOGLBot, a friendly assistant for the USC house committees in running FOP! Please type /help if you need assistance with commands.\n\nYou are currently known as \'%s\'.\nIf you do not see your name, you cannot use this bot.' % whoIs(chat_id))
+		return
+
+	if chat_id not in getIDs(authorized) or command.startswith('/start'):
 		deny(chat_id)
 		return
 
+	# every command below this point is for authorized users only
 	if command.startswith('/hello'):
 		bot.sendMessage(chat_id, 'Hi! My name is VOGLBot!')
 	elif command.startswith('/sos'):
 		# sos that sends message
-		sos_command = re.match(broadcast_re, command)
+		sos_command = re.match(message_re, command)
 		sos(sos_command.group(2), chat_id)
 	elif command == '/help':
 		# naive helper
 		bot.sendMessage(chat_id, naiveHelp())
 	elif command.startswith('/help'):
 		# specific command helper
-		help_command = re.match(help_re, command)
+		help_command = re.match(message_re, command)
 		bot.sendMessage(chat_id, getHelp(help_command.group(2)))
 	elif any(command.startswith(reg) for reg in register_type):
 		##################################
@@ -244,21 +256,23 @@ def handle(msg):
 
 		if commandword == '/add':
 			add(house, name, chat_id)
+
 		elif commandword == '/remove':
 			# remove existing person from database
-			reply = 'Removing \'%s\' of \'%s\' house from database.' % (name, house)
-			logger.info(reply)
-			bot.sendMessage(chat_id, reply)
+			remove(house, name, chat_id)
+
 		elif commandword == '/find':
 			find(house, name, chat_id)
+
 		elif commandword == '/strength':
-			# here, name refers to mode
+			# here name refers to mode
 			getStrength(house, name, chat_id)
+
 		elif commandword == '/enumerate':
-			# here, name refers to mode
+			# here name refers to mode
 			getEnumerate(house, name, chat_id)
 	else:
-		bot.sendMessage(chat_id, 'Try /help for a list of commands')
+		bot.sendMessage(chat_id, 'Try /help for a list of commands.')
 
 # start the bot
 bot = telepot.Bot(TOKEN)

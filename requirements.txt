@@ -1,4 +1,4 @@
 telepot
 fuzzywuzzy
 logging
-redis
+pymongo

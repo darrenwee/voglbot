@@ -39,18 +39,18 @@ students = db['students']
 def report(message):
 	for admin in getIDs(admins):
 		bot.sendMessage(admin, '[Admin] ' + message)
-		logger.warning('Sent \'%s\' to admin %s' % (message, admin))
+		logger.warning('Sent \'%s\' to admin %s' % (message, whoIs(admin)))
 	return
 
 def deny(chat_id):
 	# print to console log
-	logger.error('Chat ID %s was denied access.' % chat_id)
+	logger.error('Chat ID \'%s\' was denied access.' % whoIs(chat_id))
 
 	# scold unauthorized user
 	bot.sendMessage(chat_id, 'You are not authorized to use this bot; this incident has been reported. Contact Darren at 92328340 if this is a mistake.')
 
 	# report incident to admins (listed in authorized.py)
-	report('WARNING: chat ID %s was denied access' % chat_id)
+	report('WARNING: chat ID \'%s\' was denied access' % whoIs(chat_id))
 	return
 
 def add(house, name, requester):
@@ -104,7 +104,7 @@ def getStrength(house, mode, requester):
 def getEnumerate(house, mode, requester):
 	logger.info('Enumerating \'%s\' for \'%s\' house' % (mode, house))
 
-	reply = 'Enumerating all \'%s\' in \'%s\'!\n\n' % (mode, house)
+	reply = 'Enumerating \'%s\' in \'%s\'!\n\n' % (mode, house)
 	if mode in modes:
 		if house == 'all':
 			if mode in ['present', 'absent']:
@@ -120,6 +120,7 @@ def getEnumerate(house, mode, requester):
 				targetCursor = students.find( {'house': house} )
 
 	else:
+		# throw error to user for invalid mode
 		bot.sendMessage(requester, 'Invalid mode! Mode can be \'present\', \'absent\' or \'total\', try \'/help enumerate\' for more help!')
 		return
 
@@ -129,6 +130,10 @@ def getEnumerate(house, mode, requester):
 	else:
 		# at least 1 record found
 		i = int(1)
+
+		# enumerate in sorted order
+		targetCursor.sort( [('house', 1), ('name', 1), ('status', 1)] )
+
 		for target in targetCursor:
 			if house == 'all':
 				# add house label if enumerating everyone from every house

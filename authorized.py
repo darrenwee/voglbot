@@ -9,8 +9,13 @@ from voglogger import *
 """
 
 address_book = {
-	'Darren'	: 53558212,
-	'Yantyng'	: 112279032,
+	'Darren'	: 53558212,		# black VOGL, admin
+	'Yantyng'	: 112279032,	# safety/FOP, black OGL
+	'Chester'	: 110971462, 	# blue VOGL
+	'Samantha'	: 106888349,	# red VOGL
+	'Khaiqing'	: 118410662,	# purple VOGL
+	'Claire'	: 27374797,		# green VOGL
+	'Jiahao' 	: 68976391,		# orange VOGL
 }
 
 rev_book = dict((v,k) for k,v in address_book.iteritems())
@@ -23,8 +28,7 @@ rev_book = dict((v,k) for k,v in address_book.iteritems())
 # admins receive system reports and logging
 admins = ['Darren']
 
-#			Darren	Jiahao	Claire	Khaiqing	Chester		Samantha
-vogls = ['Darren']
+vogls = ['Darren', 'Jiahao', 'Claire', 'Khaiqing', 'Chester', 'Samantha']
 
 # 			Xinying	Hongwei	Bryan	Natalya		Changming	Jingshun
 cogls = []

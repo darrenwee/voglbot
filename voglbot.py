@@ -172,9 +172,18 @@ def find(house, name, requester):
 def toString(student):
 	return
 
-def sos(requester):
-	for aider in safety:
-		bot.sendMessage('SOS by %s' % whoIs(requester))
+def sos(message, requester):
+	logger.info('%s: SOS broadcast \'%s\'' % (whoIs(requester), message))
+
+	reply = 'SOS by %s: %s' % (whoIs(requester), message)
+	#report(reply)
+	
+	# fetch chat IDs of all first aiders
+	aiders = getIDs(safety)
+	
+	# broadcast SOS to all first aiders
+	for aider in aiders:
+		bot.sendMessage(aider, reply)
 
 # command groups
 register_type = ['/add', '/remove', '/find', '/strength', '/enumerate']
@@ -184,6 +193,7 @@ iterator_type = ['/enumerate']
 iterator_re = re.compile('(/[a-z]+)\s+([a-z]+)\s+([a-z]+)', re.IGNORECASE)
 
 help_re = re.compile('(/help)\s+(.+)', re.IGNORECASE)
+broadcast_re = re.compile('(/sos)\s*(.*)', re.IGNORECASE)
 
 global houses
 houses = ['green', 'black', 'purple', 'blue', 'red', 'orange', 'all']
@@ -207,11 +217,15 @@ def handle(msg):
 
 	if command.startswith('/hello'):
 		bot.sendMessage(chat_id, 'Hi! My name is VOGLBot!')
+	elif command.startswith('/sos'):
+		# sos that sends message
+		sos_command = re.match(broadcast_re, command)
+		sos(sos_command.group(2), chat_id)
 	elif command == '/help':
 		# naive helper
 		bot.sendMessage(chat_id, naiveHelp())
 	elif command.startswith('/help'):
-		# specific helper
+		# specific command helper
 		help_command = re.match(help_re, command)
 		bot.sendMessage(chat_id, getHelp(help_command.group(2)))
 	elif any(command.startswith(reg) for reg in register_type):

@@ -12,6 +12,7 @@ description = {
 	'remove': 'usage: /remove <house> <name>\n--> removes a freshman <name> from <house>',
 	'find': 'usage: /find <house> <name>\n--> finds a freshman <name> from <house> and replies with his/her details. <name> need not be exact.',
 	'enumerate': 'usage: /enumerate <house> <mode>\n--> enumerates all the members of <house> with status <mode>',
+	'sos': 'usage: /sos <message>\n--> sends an SOS to all first aiders along with a message <message>; the message is optional. do not misuse this command',
 }
 
 # example usage (do not terminate with newlines)
@@ -20,6 +21,7 @@ examples = {
 	'remove': 'e.g. /remove black john doe augustus lim xiao hua\n--> removes \'john doe augustus lim xiao hua\' to black house',
 	'find': 'e.g. /find black john doe augustus lim xiao hua\n--> finds \'john doe augustus lim xiao hua\' in black house',
 	'enumerate': 'e.g. /enumerate green present\n--> gives a list of all students from green house who are present',
+	'sos': 'e.g. /sos FRESHIE KENNA HEATSTROKE\n--> (if sent by Darren) sends the following:\n\nSOS by Darren: FRESHIE KENNA HEATSTROKE\n\nto all first aiders',
 }
 
 # argument list

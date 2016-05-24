@@ -41,6 +41,7 @@ safety = ['Darren', 'Yantyng']
 
 # all authorized users are stored here
 authorized = admins + vogls + cogls + fopcomm + safety
+authorized = list(set(authorized)) # get rid of duplicates
 #authorized = []
 
 def getIDs(group):

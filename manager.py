@@ -19,10 +19,24 @@ students = db['students']
 
 ### helper functions ###
 def houseIsValid(house):
-    return house in ['green', 'black', 'purple', 'blue', 'red', 'orange', 'all']
+    houses = {
+        'green': True,
+        'black': True,
+        'purple': True,
+        'blue': True,
+        'red': True,
+        'orange': True,
+        'all': True,
+    }
+    return houses.get(house, False)
 
 def statusIsValid(status):
-    return status in ['present', 'absent', 'total']
+    statuses = {
+        'present': True,
+        'absent': True,
+        'total': True,
+    }
+    return statuses.get(status, False)
 
 def enumerator(cursor, fields):
     reply = ''
@@ -35,7 +49,10 @@ def enumerator(cursor, fields):
     for person in cursor:
         reply += str(i) + '.\n'
         for field in fields:
-            reply += '%s: %s\n' % (field.title(), person[field].title())
+            if field == 'house':
+                reply += '%s: %s\n' % (field.title(), person[field][0].title())
+            else:
+                reply += '%s: %s\n' % (field.title(), person[field].title())
         i += 1
         reply += '\n'
 
@@ -51,6 +68,7 @@ def add(house, name, requester):
         student = {
             'name': name,
             'type': 'freshman',
+            'color': house,
             'house': [house, 'all'],
             'status': 'present',
             'statuslog': ['initial registration at ' + timestamp],
@@ -107,7 +125,7 @@ def getEnumerate(house, status, requester):
             results = students.find( {'house': house} )
 
         # sort results
-        results.sort( [ ('status', -1), ('name', 1) ] )
+        results.sort( [ ('color', -1), ('status', -1), ('name', 1) ] )
 
         # catch empty house/mode query
         if results.count() == 0:
@@ -115,9 +133,8 @@ def getEnumerate(house, status, requester):
 
         # build the reply message
         i = 1
-        reply += 'Enumerating \'%s\' in \'%s\'\n\n' % (status, house)
         for person in results:
-            reply += '%d. %s: %s, %s\n' % (i, person['name'].title(), person['house'].title(), person['status'].title())
+            reply += '%d. %s: %s, %s\n' % (i, person['name'].title(), person['house'][0].title(), person['status'].title())
             i += 1
     else:
         # catch invalid parameters
@@ -132,22 +149,19 @@ def find(house, pattern, verbose, requester):
 
     if houseIsValid(house):
         # query for database cursor
-        if house == 'all':
-            results = students.find( {'name': { '$regex': '.*' + pattern + '.*'} } )
-        else:
-            results = students.find( {'name': { '$regex': '.*' + pattern + '.*'}, 'house': house } )
+        results = students.find( {'name': { '$regex': '.*' + pattern + '.*'}, 'house': house } )
     
         # sort results
-        results.sort( [ ('house', -1), ('name', 1) ] )
+        results.sort( [ ('color', -1), ('name', 1) ] )
 
         # what info to send back (determined by verbose flag)
         if verbose is True:
-            details = ['name', 'house', 'status', 'dietary', 'medical', 'addedby']
+            details = ['name', 'house', 'status', 'diet', 'medical', 'addedby']
         else:
             details = ['name', 'house', 'status']
     
         # build the reply
-        reply += 'Finding any patterns with \'%s\' for \'%s\'\n\n' % (pattern, house)
+        reply += 'Finding any names containing \'%s\' for \'%s\'\n\n' % (pattern, house)
         reply += enumerator(results, details)
     else:
         # catch shitty parameters

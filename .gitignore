@@ -3,3 +3,4 @@
 settings_secret.py
 voglbot.log
 database/
+tester.py

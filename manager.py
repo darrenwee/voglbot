@@ -104,7 +104,7 @@ def getStrength(house, status, requester):
             status_strength = students.count( {'house': house, 'status': status} )
             reply += 'Strength for \'%s\' in \'%s\': %d/%d' % (status, house, status_strength, house_strength)
         else:
-            reply += 'Total strength for \'%s\' house is %d' % status_strength
+            reply += 'Total strength for \'%s\' house is %d' % (house, house_strength)
     else:
         # catch shitty parameters
         logger.info('%s: /strength query failed (invalid parameters)' % whoIs(requester))

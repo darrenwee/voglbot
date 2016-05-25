@@ -2,296 +2,86 @@
 
 import sys
 import time
-import datetime
-import pprint
-import logging
+import random
+import threading
 import telepot
+import pymongo
+
 import re
-#from fuzzywuzzy import fuzz # for fuzzy string matching
 
-# load auxiliary data
-from voglogger import *         # logger management
-from settings_secret import *   # telegram bot API token
-from authorized import *        # authorized user management
-from helper import *            # /help documentation
+from telepot.delegate import per_chat_id, create_open
 
-from pymongo import *
-# establish connection to mongodb server
-try:
-    connection = MongoClient('monty', 27017)
-    logger.info('Successfully connected to MongoDB daemon')
-except pymongo.errors.ConnectionFailure, e:
-    logger.error('Failed to connect to MongoDB: %s' % e)
-    logger.error('VOGLBot exiting!')
-    sys.exit(1)
+# voglbot modules
+from settings_secret import TOKEN   # telegram API key
+from authorized import *            # user management
+from manager import *               # database management
+from voglogger import logger        # logger object
+import helper                       # /help documentation
 
-db = connection['primary']
-students = db['students']
+# regular expressions for commands
+register_re = re.compile('(/[a-z]+) ([a-z]+) (.+)', re.I)
 
-'''
-    $ python voglbot.py <telegram-bot-token>
+class VOGLBot(telepot.helper.ChatHandler):
+    def __init__(self, seed_tuple, timeout):
+        super(VOGLBot, self).__init__(seed_tuple, timeout)
+        self._previous = ''
 
-    VOGLBot: Every VOGL's favorite assistant
-
-    kill program with Ctrl-C
-'''
-
-def report(message):
-    for admin in getIDs(admins):
-        bot.sendMessage(admin, '[Admin] ' + message)
-        logger.warning('Sent \'%s\' to admin %s' % (message, whoIs(admin)))
-    return
-
-def deny(chat_id):
-    reply = 'Chat ID \'%s\' was denied access.' % whoIs(chat_id)
-
-    # print to console log
-    logger.error(reply)
-
-    # scold unauthorized user
-    bot.sendMessage(chat_id, 'You cannot use this bot. Contact Darren at 92328340 if this is a mistake.')
-
-    # report incident to admins (listed in authorized.py)
-    report(reply)
-    return
-
-def add(house, name, requester):
-    # add new person to database
-    timestamp = str(datetime.datetime.now())
-
-    # return feedback
-    logger.info('%s: Adding \'%s\' from \'%s\'' % (whoIs(requester), name, house))
-    student = {
-        'name': name,
-        'type': 'freshman',
-        'house': house,
-        'status': 'present',
-        'statuslog': ['initial registration at '+timestamp],
-        'medical': '',
-        'addedby': whoIs(requester)
-    }
-
-    students.insert_one(student)
-    bot.sendMessage(requester, 'Successfully added \'%s\' of \'%s\' house into database.' % (name, house))
-    return
-
-def remove(house, name, requester):
-    reply = 'Removing \'%s\' of \'%s\' house from database.' % (name, house)
-    logger.info(whoIs(requester) + ': ' + reply)
-    report(whoIs(requester) + ': ' + reply)
-    bot.sendMessage(requester, reply)
-
-    # perform remove
-    return
-
-def getStrength(house, mode, requester):
-    logger.info('Returning strength for \'%s\' house' % house)
-    
-    # query for modal strength if relevant
-    if mode in modes:
-        if mode in ['present', 'absent']:
-            mode_strength = students.count( {'house': house, 'status': mode} )
-    else:
-        bot.sendMessage(requester, 'Invalid mode! Mode can be \'present\', \'absent\' or \'total\', try \'/help strength\' for more help!')
-        return
-
-    # query for total strength
-    total_strength = students.count( {'house': house} )
-
-    if mode in ['present', 'absent']:
-        reply = 'Strength for \'%s\' in \'%s\' house is %d/%d' % (mode, house, mode_strength, total_strength)
-    else:
-        reply = 'Total strength in \'%s\' house is %d' % (mode, house, total_strength)
-
-    bot.sendMessage(requester, reply)
-    logger.info('Replying \'%s\' to /strength query by %s' % (reply, whoIs(requester)))
-    return
-
-def getEnumerate(house, mode, requester):
-    logger.info('Enumerating \'%s\' for \'%s\' house' % (mode, house))
-
-    reply = 'Enumerating \'%s\' in \'%s\'!\n\n' % (mode, house)
-    if mode in modes:
-        if house == 'all':
-            if mode in ['present', 'absent']:
-                targetCursor = students.find( {'status': mode} )
-            elif mode == 'total':
-                targetCursor = students.find( {} )
-        else:
-            if mode in ['present', 'absent']:
-                # modal enumeration
-                targetCursor = students.find( {'house': house, 'status': mode} )
-            elif mode == 'total':
-                # total enumeration
-                targetCursor = students.find( {'house': house} )
-    else:
-        # throw error to user for invalid mode
-        bot.sendMessage(requester, 'Invalid mode! Mode can be \'present\', \'absent\' or \'total\', try \'/help enumerate\' for more help!')
-        return
-
-    if targetCursor.count() == 0:
-        # no records found
-        reply += 'No records found.'
-    else:
-        # at least 1 record found
-        i = int(1)
-
-        # enumerate in sorted order: house, then name, then status
-        targetCursor.sort( [('house', 1), ('name', 1), ('status', 1)] )
-
-        for target in targetCursor:
-            if house == 'all':
-                # add house label if enumerating everyone from every house
-                reply += '%d. %s: %s, %s\n' %(i, target['name'].title(), target['house'].title(), target['status'].title())
-            else:
-                # omit house label if enumerating everyone from a specific house
-                reply += '%d. %s: %s\n' % (i, target['name'].title(), target['status'].title())
-            i += 1
-
-    bot.sendMessage(requester, reply)
-    logger.info('Replying \'%s\' to /enumerate query by %s' % (reply, whoIs(requester)))
-    return
-
-def update(house, direction, name):
-    # update database
-    return
-
-def fuzzyMatch(name):
-    # only used when a query fails to find a name
-    # returns suggestions to user for close name matches
-    return
-
-def find(house, name, verbose, requester):
-    logger.info('%s: Finding \'%s\' in \'%s\'.' % (whoIs(requester), name, house))
-    
-    i = 1
-    if house == 'all':
-        targets = students.find( {'name': { '$regex': '.*' + name + '.*'} } )
-    else:
-        targets = students.find( {'name': { '$regex': '.*' + name + '.*'}, 'house': house } )
-
-    # what info to send back (determined by verbose flag)
-    if verbose is True:
-        details = ['name', 'house', 'status', 'medical', 'addedby']
-    else:
-        details = ['name', 'house', 'status', 'addedby']
-
-    reply = ''
-    for target in targets:
-        reply += '%s.\n' % i
-        for detail in details:
-            reply += detail.title() + ': ' + target[detail].title() + '\n'
-        i += 1
-        reply += '\n'
-
-    bot.sendMessage(requester, reply)
-    return
-
-def toString(student):
-    return
-
-def sos(message, requester):
-    logger.info('%s: SOS broadcast \'%s\'' % (whoIs(requester), message))
-
-    reply = 'SOS by %s: %s' % (whoIs(requester), message)
-    #report(reply)
-    
-    # fetch chat IDs of all first aiders
-    aiders = getIDs(safety)
-    
-    # broadcast SOS to all first aiders
-    for aider in aiders:
-        bot.sendMessage(aider, reply)
-        logger.info('SOS broadcast to %s' % whoIs(aider))
-    
-# command groups
-register_type = ['/add', '/remove', '/find', '/strength', '/enumerate']
-register_re = re.compile('(/[a-z]+)\s+([a-z]+)\s+(.+)', re.IGNORECASE) # /<command> <house> <name>
-
-iterator_type = ['/enumerate']
-iterator_re = re.compile('(/[a-z]+)\s+([a-z]+)\s+([a-z]+)', re.IGNORECASE)
-
-message_re = re.compile('(/.+)\s+(.+)', re.IGNORECASE)
-
-global houses
-houses = ['green', 'black', 'purple', 'blue', 'red', 'orange', 'all']
-global modes
-modes = ['present', 'absent', 'total']
-
-def handle(msg):
-    #pprint.pprint(msg)
-    msg_type, chat_type, chat_id = telepot.glance(msg)
-
-    command = msg['text'].strip().lower()
-    logger.info('%s: Received message \'%s\'' % (whoIs(chat_id), command) )
-
-    if msg_type != 'text':
-        bot.sendMessage(chat_id, 'I can only receive text messages. Try /help')
-        return
-
-    # send description
-    # /start is the only command that non-authorized users can use
-    if command.startswith('/start'):
-        bot.sendMessage(chat_id, 'Hi! I\'m VOGLBot, a friendly assistant for the USC house committees in running FOP! Please type /help if you need assistance with commands.\n\nYou are currently known as \'%s\'.\nIf you do not see your name, you cannot use this bot.' % whoIs(chat_id))
-        return
-
-    if chat_id not in getIDs(authorized) or command.startswith('/start'):
-        deny(chat_id)
-        return
-
-    # every command below this point is for authorized users only
-    if command.startswith('/hello'):
-        bot.sendMessage(chat_id, 'Hi! My name is VOGLBot!')
-    elif command.startswith('/sos'):
-        # sos that sends message
-        sos_command = re.match(message_re, command)
-        sos(sos_command.group(2), chat_id)
-    elif command == '/help':
-        # naive helper
-        bot.sendMessage(chat_id, naiveHelp())
-    elif command.startswith('/help'):
-        # specific command helper
-        help_command = re.match(message_re, command)
-        bot.sendMessage(chat_id, getHelp(help_command.group(2)))
-    elif any(command.startswith(reg) for reg in register_type):
-        ##################################
-        ### command is a register type ###
-        ##################################
-        reg_command = re.match(register_re, command)
-        commandword = reg_command.group(1)
-        house = reg_command.group(2)
-        name = reg_command.group(3)
-
-        # input sanitization for house field
-        if house not in houses:
-            bot.sendMessage(chat_id, 'No such house.')
+    # message handler
+    def on_chat_message(self, message):
+        content_type, chat_type, chat_id = telepot.glance(message)
+        
+        # check for message type
+        if content_type != 'text':
+            self.sender.sendMessage('This bot can only receive text messages!')
             return
 
-        if commandword == '/add':
-            add(house, name, chat_id)
+        command = message['text'].lower()
+        logger.info('Received \'%s\' from %s' % (command, whoIs(chat_id)) )
 
-        elif commandword == '/remove':
-            # remove existing person from database
-            remove(house, name, chat_id)
+        # message for /start
+        if command == '/start':
+            self.sender.sendMessage('Hi! I\'m VOGLBot, a friendly robot assistant for USC FOP 2016. Only authorized users can use this bot.')
+            return
 
-        elif commandword == '/find':
-            find(house, name, False, chat_id)
-        elif commandword == '/vfind':
-            find(house, name, True, chat_id)
-        elif commandword == '/strength':
-            # here name refers to mode
-            getStrength(house, name, chat_id)
+        # deny unauthorized user access
+        if chat_id not in getIDs(authorized):
+            logger.warning('Attempted unauthorized access by %s.' % whoIs(chat_id))
+            self.sender.sendMessage('You are not authorized to use this bot. Contact Darren at 92328340 or @ohdearren if this is a mistake.')
+            return
 
-        elif commandword == '/enumerate':
-            # here name refers to mode
-            getEnumerate(house, name, chat_id)
-    else:
-        bot.sendMessage(chat_id, 'Try /help for a list of commands.')
+        # do stuff
+        if command == '/help':
+            self.sender.sendMessage(helper.naiveHelp())
+        elif command.startswith('/help'):
+            matches = re.match('/help ([a-z]+)', command)
+            self.sender.sendMessage(helper.getHelp(matches.group(1)))
+        elif command.startswith('/add'):
+            matches = re.match(register_re, command)
+            self.sender.sendMessage(add(matches.group(2), matches.group(3), chat_id))
+        elif command.startswith('/remove'):
+            matches = re.match(register_re, command)
+            self.sender.sendMessage(remove(matches.group(2), matches.group(3), chat_id))
+        elif command.startswith('/strength'):
+            matches = re.match(register_re, command)
+            self.sender.sendMessage(getStrength(matches.group(2), matches.group(3), chat_id))
+        elif command.startswith('/enumerate'):
+            matches = re.match(register_re, command)
+            self.sender.sendMessage(getEnumerate(matches.group(2), matches.group(3), chat_id))
+        elif command.startswith('/find'):
+            matches = re.match(register_re, command)
+            self.sender.sendMessage(find(matches.group(2), matches.group(3), False, chat_id))
+        elif command.startswith('/vfind'):
+            matches = re.match(register_re, command)
+            self.sender.sendMessage(find(matches.group(2), matches.group(3), True, chat_id))
 
-# start the bot
-bot = telepot.Bot(TOKEN)
-bot.message_loop(handle)
+        self._previous = command
+        return
+    
+
 logger.info('VOGLBot is listening ...')
 
-while 1:
-    time.sleep(5)
+# the timeout here refers to when a delegator starts over
+bot = telepot.DelegatorBot(TOKEN, [
+    (per_chat_id(), create_open(VOGLBot, timeout=120)),
+])
+bot.message_loop(run_forever=True)

@@ -19,7 +19,8 @@ from voglogger import logger        # logger object
 import helper                       # /help documentation
 
 # regular expressions for commands
-register_re = re.compile('(/[a-z]+) ([a-z]+) (.+)', re.I)
+register_re = re.compile('(/[a-z]+)\s+([a-z]+)\s+(.+)', re.I)
+updater_re = re.compile('(/[a-z]+)\s+([a-z+)\s+([a-z]+)\s+(.+)', re.I)
 
 class VOGLBot(telepot.helper.ChatHandler):
     def __init__(self, seed_tuple, timeout):
@@ -40,7 +41,8 @@ class VOGLBot(telepot.helper.ChatHandler):
 
         # message for /start
         if command == '/start':
-            self.sender.sendMessage('Hi! I\'m VOGLBot, a friendly robot assistant for USC FOP 2016. Only authorized users can use this bot.')
+            self.sender.sendMessage('Hi! I\'m VOGLBot, a friendly robot assistant for USC FOP 2016.')
+            self.sender.sendMessage('You are \'%s\'. If you do not see your name displayed, you cannot use this bot.' % whoIs(chat_id))
             return
 
         # deny unauthorized user access
@@ -55,6 +57,8 @@ class VOGLBot(telepot.helper.ChatHandler):
         elif command.startswith('/help'):
             matches = re.match('/help ([a-z]+)', command)
             self.sender.sendMessage(helper.getHelp(matches.group(1)))
+
+        # registration-type commands
         elif command.startswith('/add'):
             matches = re.match(register_re, command)
             self.sender.sendMessage(add(matches.group(2), matches.group(3), chat_id))
@@ -73,6 +77,9 @@ class VOGLBot(telepot.helper.ChatHandler):
         elif command.startswith('/vfind'):
             matches = re.match(register_re, command)
             self.sender.sendMessage(find(matches.group(2), matches.group(3), True, chat_id))
+        elif command.startswith('/check'):
+            matches = re.match('(/[a-z]+)\s+([a-z]+)\s+(.+)\s+(present|absent)', command)
+            self.sender.sendMessage(updater(matches.group(2), matches.group(3), 'status', matches.group(4), chat_id))
 
         self._previous = command
         return

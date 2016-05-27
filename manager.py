@@ -38,6 +38,20 @@ def statusIsValid(status):
     }
     return statuses.get(status, False)
 
+def fieldIsValid(field):
+    fields = {
+        'name': True,
+        'type': True,
+        'color': True,
+        'house': True,
+        'status': True,
+        'statuslog': True,
+        'diet': True,
+        'medical': True,
+        'addedby': True,
+    }
+    return fields.get(field, False)
+
 def enumerator(cursor, fields):
     reply = ''
 
@@ -86,11 +100,16 @@ def add(house, name, requester):
 
 def remove(house, name, requester):
     reply = 'Removed \'%s\' of \'%s\' house from database.' % (name, house)
-    logger.info(whoIs(requester) + ': ' + reply)
-    report(whoIs(requester) + ': ' + reply)
 
     # perform remove
-    return reply
+    if students.find( {'name': name, 'house': house }).count() == 0:
+        return 'No such record found.'
+    elif students.find( {'name': name, 'house': house }).count() == 1:
+        students.remove( {'name': name, 'house': house}, 1 )
+        logger.info(whoIs(requester) + ': ' + reply)
+        return reply
+
+    return 'Multiple records with the same name and house found. Contact Darren for removal.'
 
 def getStrength(house, status, requester):
     reply = ''
@@ -169,4 +188,22 @@ def find(house, pattern, verbose, requester):
         return 'Invalid house. See \'/help find\''
 
     logger.info('%s: Returning find query for pattern \'%s\' for \'%s\'' % (whoIs(requester), pattern, house))
+    return reply
+
+def updater(house, name, field, content, requester):
+    reply = 'Updating \'%s\' for \'%s\' in \'%s\' house.\n\n' % (field, name, house)
+
+    if houseIsValid(house):
+        # check if result was found
+        if students.find_one( {'name': name, 'house':house} ) == None:
+            # no results
+            reply += 'Could not find \'%s\' from \'%s\' house.' % (name, house)
+        else:
+            # got results
+            if fieldIsValid(field) and field != 'house':
+                logger.info('%s: Updating \'%s\' for \'%s\' in \'%s\' with: \'%s\'' % (whoIs(requester), field, name, house, content))
+                students.update_one( {'name': name, 'house': house}, { '$set': { field: content } } ) # perform update
+                reply += 'Successfully updated \'%s\' field for \'%s\' in \'%s\' with: \'%s\'' % (field, name, house, content)
+            else:
+                reply += 'Invalid field.'
     return reply

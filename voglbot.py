@@ -77,9 +77,18 @@ class VOGLBot(telepot.helper.ChatHandler):
         elif command.startswith('/vfind'):
             matches = re.match(register_re, command)
             self.sender.sendMessage(find(matches.group(2), matches.group(3), True, chat_id))
-        elif command.startswith('/check'):
-            matches = re.match('(/[a-z]+)\s+([a-z]+)\s+(.+)\s+(present|absent)', command)
-            self.sender.sendMessage(updater(matches.group(2), matches.group(3), 'status', matches.group(4), chat_id))
+        elif command.startswith('/in'):
+            matches = re.match('(/[a-z]+)\s+([a-z]+)\s+(.+)', command)
+            if matches != None:
+                self.sender.sendMessage(updater(matches.group(2), matches.group(3), 'status', 'present', chat_id))
+            else:
+                self.sender.sendMessage('Update failed. No such house/person.')
+        elif command.startswith('/out'):
+            matches = re.match('(/[a-z]+)\s+([a-z]+)\s+(.+)', command)
+            if matches != None:
+                self.sender.sendMessage(updater(matches.group(2), matches.group(3), 'status', 'absent', chat_id))
+            else:
+                self.sender.sendMessage('Update failed. No such house/person.')
 
         self._previous = command
         return

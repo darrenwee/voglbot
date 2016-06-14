@@ -9,13 +9,31 @@ from voglogger import *
 """
 
 address_book = {
-    'Darren'    : 53558212,     # black VOGL, admin
+    # fop comm
+    'Andrea'    : 113764188,    # fop director
+    'Yuchuan'   : 108571854,    # fop vice-director
     'Yantyng'   : 112279032,    # safety/FOP, black OGL
+    'Dexter'    : 58599435,     # safety IC for ocamp
+
+    # vogls
+    'Darren'    : 53558212,     # black VOGL, admin
     'Chester'   : 110971462,    # blue VOGL
     'Samantha'  : 106888349,    # red VOGL
     'Khaiqing'  : 118410662,    # purple VOGL
     'Claire'    : 27374797,     # green VOGL
     'Jiahao'    : 68976391,     # orange VOGL
+
+    # COGLs
+    'Xinying'   : 104784604,    # black COGL
+    'Changming' : 52917741,     # blue COGL
+    'Natalya'   : 16335747,     # purple COGL
+    'Bryan'     : 117396861,    # green COGL
+    'Hongwei'   : 98195170,     # orange COGL
+    'Jingshun'  : 102888885,    # red COGL
+
+    # USC MC
+    'Tham'      : 111665525,    # USC MC member
+
 }
 
 rev_book = dict((v,k) for k,v in address_book.iteritems())
@@ -31,13 +49,13 @@ admins = ['Darren']
 vogls = ['Darren', 'Jiahao', 'Claire', 'Khaiqing', 'Chester', 'Samantha']
 
 #           Xinying Hongwei Bryan   Natalya     Changming   Jingshun
-cogls = []
+cogls = ['Xinying', 'Changming', 'Natalya', 'Bryan', 'Hongwei', 'Jingshun']
 
 #           Andrea Yuchuan  Yantyng Shaoyang
-fopcomm = ['Yantyng']
+fopcomm = ['Andrea', 'Yuchuan', 'Dexter', 'Yantyng', 'Tham']
 
 #           Raag    Lynette Leon    Dexter  Elisabeth   Zhihao  
-safety = ['Darren', 'Yantyng']
+safety = ['Darren', 'Yantyng', 'Khaiqing', 'Dexter', 'Jiahao']
 
 # all authorized users are stored here
 authorized = admins + vogls + cogls + fopcomm + safety

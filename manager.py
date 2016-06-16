@@ -79,6 +79,7 @@ def add(house, name, requester):
 
         # check for duplicate name
         if students.find( {'name': name, 'house': house }).count() != 0:
+            logger.warn('%s: /add failed due to duplicate entry' % (whoIs(requester)))
             return 'There is already someone with that name and house in the database. /add failed.'
 
         timestamp = str(datetime.datetime.now())

@@ -68,9 +68,9 @@ class VOGLBot(telepot.helper.ChatHandler):
         elif command.startswith('/strength'):
             matches = re.match(register_re, command)
             self.sender.sendMessage(getStrength(matches.group(2), matches.group(3), chat_id))
-        elif command.startswith('/enumerate'):
-            matches = re.match(register_re, command)
-            self.sender.sendMessage(getEnumerate(matches.group(2), matches.group(3), chat_id))
+        elif command.startswith('/enum'):
+            house = re.match('\s*/enum\s+([a-z]+)', command).group(1)
+            self.sender.sendMessage(getEnumerate(house, chat_id))
         elif command.startswith('/find'):
             matches = re.match(register_re, command)
             self.sender.sendMessage(find(matches.group(2), matches.group(3), False, chat_id))

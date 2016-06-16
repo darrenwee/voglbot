@@ -12,9 +12,12 @@ address_book = {
     # fop comm
     'Andrea'    : 113764188,    # fop director
     'Yuchuan'   : 108571854,    # fop vice-director
+
+    # safety
     'Yantyng'   : 112279032,    # safety/FOP, black OGL
     'Dexter'    : 58599435,     # safety IC for ocamp
-
+    'Raag'      : 80903667,     # blue house first-aider
+    
     # vogls
     'Darren'    : 53558212,     # black VOGL, admin
     'Chester'   : 110971462,    # blue VOGL
@@ -36,7 +39,7 @@ address_book = {
 
 }
 
-rev_book = dict((v,k) for k,v in address_book.iteritems())
+rev_book = {v: k for k, v in address_book.items()}
 
 ################################################################
 ## only authorized house and FOP comm members can use the bot ##
@@ -48,14 +51,11 @@ admins = ['Darren']
 
 vogls = ['Darren', 'Jiahao', 'Claire', 'Khaiqing', 'Chester', 'Samantha']
 
-#           Xinying Hongwei Bryan   Natalya     Changming   Jingshun
 cogls = ['Xinying', 'Changming', 'Natalya', 'Bryan', 'Hongwei', 'Jingshun']
 
-#           Andrea Yuchuan  Yantyng Shaoyang
 fopcomm = ['Andrea', 'Yuchuan', 'Dexter', 'Yantyng', 'Tham']
 
-#           Raag    Lynette Leon    Dexter  Elisabeth   Zhihao  
-safety = ['Darren', 'Yantyng', 'Khaiqing', 'Dexter', 'Jiahao']
+safety = ['Darren', 'Yantyng', 'Khaiqing', 'Dexter', 'Jiahao', 'Raag']
 
 # all authorized users are stored here
 authorized = admins + vogls + cogls + fopcomm + safety
@@ -66,15 +66,16 @@ def getIDs(group):
     #logger.info('IDs for %s were requested' % group)
     IDs = []
     for person in group:
-        if address_book.has_key(person):
+        if person in address_book:
             IDs.append(address_book.get(person))
         else:
             logger.warning('%s was not found in address book.' % person)
     return IDs
 
 def whoIs(target_id):
-    if rev_book.has_key(target_id):
+    if target_id in rev_book:
         return rev_book.get(target_id)
     else:
         logger.warning('%s was not found in address book.' % target_id)
         return target_id
+

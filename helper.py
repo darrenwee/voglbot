@@ -12,9 +12,9 @@ description = {
     'remove': 'usage: /remove house name\n-- removes a freshman name from house',
     'find': 'usage: /find house name\n-- finds a freshman name from house and replies with his/her details (name, house and status). name need not be exact.',
     'vfind': 'usage: /vfind house name\n-- finds a freshman name from house and replies with his/her details (name, house, status, diet, medical declaration, addedby). name need not be exact.',
-    'enumerate': 'usage: /enumerate house mode\n-- enumerates all the members of house with status mode',
-    'check': 'usage: /check house name status\n-- updates a freshmen\'s status',
-    
+    'enum': 'usage: /enum house\n-- enumerates all the members of house',
+    'in': 'usage: /in house name\n-- change status of name from house to present',
+    'out': 'usage: /out house name\n-- change status of name from house to absent',
     #'sos': 'usage: /sos message\n-- sends an SOS to all first aiders along with a message message; the message is optional. do not misuse this command',
 }
 
@@ -24,8 +24,9 @@ examples = {
     'remove': 'e.g. /remove black john doe augustus lim xiao hua\n-- removes \'john doe augustus lim xiao hua\' to black house',
     'find': 'e.g. /find black john doe\n-- finds every entry with the name containing \'john doe\' in black house',
     'vfind': 'e.g. /vfind black john\n-- finds every entry with name containing \'john\' in black house',
-    'enumerate': 'e.g. /enumerate green present\n-- gives a list of all students from green house who are present',
-    'check': 'e.g. /check black darren wee absent\n--change status of \'darren wee\' from black house to \'absent\'',
+    'enum': 'e.g. /enum green\n-- gives a list of all present and absent students from green house',
+    'in': 'e.g. /in black john doe\n-- change status of \'john doe\' from \'black\' house to present',
+    'out': 'e.g. /out black john doe\n-- change status of \'john doe\' from \'black\' house to absent',
     #'sos': 'e.g. /sos FRESHIE KENNA HEATSTROKE\n-- (if sent by Darren) sends the following:\n\nSOS by Darren: freshie kenna heatstroke\n\nto all first aiders',
 }
 
@@ -44,22 +45,23 @@ relevantParameters = {
     'find': ['house'],
     'vfind': ['house'],
     'enumerate': ['house', 'mode'],
-    'check': ['house', 'status']
+    'in': ['house'],
+    'out': ['house'],
 }
 
 def getHelp(command):
     reply = ''
 
     # check if basic doc exists
-    if description.has_key(command):
+    if command in description:
         reply += description.get(command) + '\n\n'
 
         # append the example if there is one
-        if examples.has_key(command):
+        if command in examples:
             reply += examples.get(command) + '\n\n'
 
         # append parameters if there are any
-        if relevantParameters.has_key(command):
+        if command in relevantParameters:
             reply += 'Parameters\n'
             for param in relevantParameters.get(command):
                 reply += '%s\n' % (parameterDict.get(param))
@@ -69,7 +71,7 @@ def getHelp(command):
     return reply
 
 def naiveHelp():
-    reply = 'Commands available:\n'
+    reply = 'Commands available:\n\n'
     for command in description.keys():
         reply += command + '\n'
     reply += '\nUse \'/help command\' for more info'

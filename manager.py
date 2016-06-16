@@ -3,18 +3,18 @@
 import datetime
 from voglogger import logger
 from authorized import whoIs
-from pymongo import *
+import pymongo
 
 # establish connection to mongodb server
 try:
-    connection = MongoClient('monty', 27017)
+    connection = pymongo.MongoClient('monty', 27017)
     logger.info('Successfully connected to MongoDB daemon')
-except pymongo.errors.ConnectionFailure, e:
+except pymongo.errors.ConnectionFailure as e:
     logger.error('Failed to connect to MongoDB: %s' % e)
     logger.error('VOGLBot exiting!')
     sys.exit(1)
 
-db = connection['primary']
+db = connection['voglbot']
 students = db['students']
 
 ### helper functions ###
@@ -132,32 +132,43 @@ def getStrength(house, status, requester):
     logger.info('%s: Returning strength for \'%s\' house' % (whoIs(requester), house))
     return reply
 
-def getEnumerate(house, status, requester):
+def getEnumerate(house, requester):
+    if houseIsValid(house):
 
-    if houseIsValid(house) and statusIsValid(status):
-        reply = 'Enumerating \'%s\' in \'%s\'\n\n' % (status, house)
-
-        # query for database cursor
-        if status in ['present', 'absent']:
-            results = students.find( {'house': house, 'status': status} )
+        # cover the all case and single house case
+        if house == 'all':
+            houses = ['black', 'blue', 'green', 'orange', 'purple', 'red']
         else:
-            results = students.find( {'house': house} )
+            houses = [house]
 
-        # sort results
-        results.sort( [ ('color', -1), ('status', -1), ('name', 1) ] )
-
-        # catch empty house/mode query
-        if results.count() == 0:
-            return reply + 'No records found.'
-
-        # build the reply message
-        i = 1
-        for person in results:
-            reply += '%d. %s: %s, %s\n' % (i, person['name'].title(), person['house'][0].title(), person['status'].title())
-            i += 1
+        reply = ''
+        for target_house in houses:
+            reply += '=====================\n'
+            reply += target_house.upper() + '\n\n'
+            for status in ['present','absent']:
+                # query for database cursor
+                results = students.find( {'house': target_house, 'status': status} )
+                
+                # sort results
+                results.sort( [ ('color', 1), ('name', 1) ] )
+        
+                reply += status.title() + '\n'
+        
+                # catch empty house/mode query
+                if results.count() == 0:
+                    reply += 'No records found.\n'
+                else:
+                    # build the reply message
+                    i = 1
+                    for person in results:
+                        reply += '%d. %-15s' % (i, person['name'].title())
+                        i += 1
+                        if (i+1)%2 == 0:
+                            reply += '\n'
+                    reply += '\n'
     else:
         # catch invalid parameters
-        logger.info('%s: /enumerate query failed (invalid parameters)' % whoIs(requester))
+        logger.info('%s: /enum query failed (invalid parameters)' % whoIs(requester))
         return 'Invalid house or status. See \'/help enumerate\''
 
     logger.info('%s: Returning enumeration for \'%s\' in \'%s\'' % (whoIs(requester), status, house))

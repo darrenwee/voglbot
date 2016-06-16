@@ -76,6 +76,11 @@ def enumerator(cursor, fields):
 def add(house, name, requester):
 
     if houseIsValid(house):
+
+        # check for duplicate name
+        if students.find( {'name': name, 'house': house }).count() != 0:
+            return 'There is already someone with that name and house in the database. /add failed.'
+
         timestamp = str(datetime.datetime.now())
     
         logger.info('%s: Adding \'%s\' from \'%s\'' % (whoIs(requester), name, house))
@@ -86,8 +91,8 @@ def add(house, name, requester):
             'house': [house, 'all'],
             'status': 'present',
             'statuslog': ['initial registration at ' + timestamp],
-            'diet': '',
-            'medical': '',
+            'diet': 'NIL',
+            'medical': 'NIL',
             'addedby': whoIs(requester)
         }
 

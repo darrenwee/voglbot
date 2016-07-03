@@ -84,18 +84,41 @@ class VOGLBot(telepot.Bot):
             matches = re.match(register_re, command)
             self.sendMessage(chat_id, find(matches.group(2), matches.group(3), True, chat_id))
         elif command.startswith('/in'):
-            matches = re.match('(/[a-z]+)\s+([a-z]+)\s+(.+)', command)
+            matches = re.match('/in\s+([a-z]+)\s+(.+)', command)
             if matches != None:
-                self.sendMessage(chat_id, updater(matches.group(2), matches.group(3), 'status', 'present', chat_id))
+                house, name = matches.groups()
+                self.sendMessage(chat_id, updater(house, name, 'status', 'present', chat_id))
+                inform(self, ['Yuchuan'], '!! %s (%s) checked in' % (name.title(), house.title()))
+                updateAttendanceLog(house, name, True, chat_id)
             else:
                 self.sendMessage(chat_id, 'Update failed. No such house/person.')
         elif command.startswith('/out'):
-            matches = re.match('(/[a-z]+)\s+([a-z]+)\s+(.+)', command)
+            matches = re.match('/out\s+([a-z]+)\s+(.+)', command)
             if matches != None:
-                self.sendMessage(chat_id, updater(matches.group(2), matches.group(3), 'status', 'absent', chat_id))
+                house, name = matches.groups()
+                self.sendMessage(chat_id, updater(house, name, 'status', 'absent', chat_id))
+                inform(self, ['Yuchuan'], '!! %s (%s) checked out' % (name.title(), house.title()))
+                updateAttendanceLog(house, name, False, chat_id)
             else:
                 self.sendMessage(chat_id, 'Update failed. No such house/person.')
-
+        elif command.startswith('/medical'):
+            matches = re.match('/medical\s+([a-z]+)\s+(.+)\s*:\s*(.+)', command)
+            if matches != None:
+                house, name, message = matches.groups()
+                self.sendMessage(chat_id, updater(house, name, 'medical', message, chat_id))
+                inform(self, ['Yuchuan'], '!! %s (%s) medical info updated: %s' % (name.title(), house.title(), message))
+            else:
+                self.sendMessage(chat_id, 'Update failed. No such house/person.')
+        elif command.startswith('/diet'):
+            matches = re.match('/diet\s+([a-z]+)\s+(.+)\s*:\s*(.+)', command)
+            if matches != None:
+                house, name, message = matches.groups()
+                self.sendMessage(chat_id, updater(house, name, 'diet', message, chat_id))
+            else:
+                self.sendMessage(chat_id, 'Update failed. No such house/person.')
+        elif command.startswith('/log'):
+            house, name = re.search('/log\s+([a-z]+)\s+(.+)', command).groups()
+            self.sendMessage(chat_id, getAttendanceLog(house, name, chat_id))
         self._previous = command
         return
     

@@ -16,6 +16,9 @@ description = {
     'in': 'usage: /in house name\n-- change status of name from house to present',
     'out': 'usage: /out house name\n-- change status of name from house to absent',
     #'sos': 'usage: /sos message\n-- sends an SOS to all first aiders along with a message message; the message is optional. do not misuse this command',
+    'medical': 'usage: /medical house name: message\n-- change medical declaration of name from house to message',
+    'diet': 'usage: /diet house name: message\n-- change diet declaration of name from house to message',
+    'log': 'usage: /log house name\n-- get the status log of name from house',
 }
 
 # example usage (do not terminate with newlines)
@@ -28,6 +31,9 @@ examples = {
     'in': 'e.g. /in black john doe\n-- change status of \'john doe\' from \'black\' house to present',
     'out': 'e.g. /out black john doe\n-- change status of \'john doe\' from \'black\' house to absent',
     #'sos': 'e.g. /sos FRESHIE KENNA HEATSTROKE\n-- (if sent by Darren) sends the following:\n\nSOS by Darren: freshie kenna heatstroke\n\nto all first aiders',
+    'medical': 'e.g. /medical black ningxin: allergic to strawberries',
+    'diet': 'e.g. /diet black ningxin: halal, no beef',
+    'log': 'e.g. /log black ningxin',
 }
 
 # argument list
@@ -47,6 +53,9 @@ relevantParameters = {
     'enumerate': ['house', 'mode'],
     'in': ['house'],
     'out': ['house'],
+    'medical': ['house'],
+    'diet': ['house'],
+    'log': ['house'],
 }
 
 def getHelp(command):

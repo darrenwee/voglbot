@@ -1,6 +1,7 @@
 #!/usr/bin/python
 
 import datetime
+import time
 from voglogger import logger
 from authorized import whoIs
 import pymongo
@@ -65,12 +66,17 @@ def enumerator(cursor, fields):
         for field in fields:
             if field == 'house':
                 reply += '%s: %s\n' % (field.title(), person[field][0].title())
+            elif field == 'diet' or field == 'medical':
+                reply += '%s: %s\n' % (field.title(), person[field])
             else:
                 reply += '%s: %s\n' % (field.title(), person[field].title())
         i += 1
         reply += '\n'
 
     return reply
+
+def makeTimestamp():
+    return datetime.datetime.fromtimestamp(time.time()).strftime('%I:%M%p, %d %B')
 
 ### executive functions ###
 def add(house, name, requester):
@@ -91,7 +97,7 @@ def add(house, name, requester):
             'color': house,
             'house': [house, 'all'],
             'status': 'present',
-            'statuslog': ['initial registration at ' + timestamp],
+            'statuslog': ['Initial Registration @ ' + makeTimestamp()],
             'diet': 'NIL',
             'medical': 'NIL',
             'addedby': whoIs(requester)
@@ -223,4 +229,31 @@ def updater(house, name, field, content, requester):
                 reply += 'Successfully updated \'%s\' field for \'%s\' in \'%s\' with: \'%s\'' % (field, name, house, content)
             else:
                 reply += 'Invalid field.'
+    return reply
+
+def updateAttendanceLog(house, name, isIn, requester):
+    if houseIsValid(house):
+        if isIn == True:
+            entry = 'In @ %s' % makeTimestamp()
+        else:
+            entry = 'Out @ %s' % makeTimestamp()
+        students.update_one( {'name': name, 'house': house}, { '$push': {'statuslog': entry} } )
+        logger.info('%s: Appended status log entry to \'%s\' from \'%s\'' % (whoIs(requester), name.title(), house.title()))
+
+def getAttendanceLog(house, name, requester):
+    reply = ''
+    if houseIsValid(house):
+        if students.find_one( {'name': name, 'house': house} ) == None:
+            # no results
+            reply += 'Could not find \'%s\' from \'%s\' house.' % (name, house)
+        else:
+            # got results
+            result = students.find_one( {'name': name, 'house': house} )
+            reply += 'Attendance for: %s (%s)\n\n' % (name, house)
+            i = 1
+            for entry in result['statuslog']:
+                reply += '%d. %s\n' % (i, entry)
+                i += 1
+    else:
+        reply += 'House not valid.'
     return reply

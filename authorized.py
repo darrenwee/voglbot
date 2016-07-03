@@ -18,6 +18,10 @@ address_book = {
     'Dexter'    : 58599435,     # safety IC for ocamp
     'Raag'      : 80903667,     # blue house first-aider
     
+    # groups
+    'ProtoGroup' : -123810911,   # the bot testing ground group chat
+    'safety_group': -1001064167878, # safety bot
+    
     # vogls
     'Darren'    : 53558212,     # black VOGL, admin
     'Chester'   : 110971462,    # blue VOGL
@@ -57,8 +61,10 @@ fopcomm = ['Andrea', 'Yuchuan', 'Dexter', 'Yantyng', 'Tham']
 
 safety = ['Darren', 'Yantyng', 'Khaiqing', 'Dexter', 'Jiahao', 'Raag']
 
-# all authorized users are stored here
-authorized = admins + vogls + cogls + fopcomm + safety
+groups = ['ProtoGroup', 'safety_group']
+
+# all authorized users are stored here 
+authorized = admins + vogls + cogls + fopcomm + safety + groups
 authorized = list(set(authorized)) # get rid of duplicates
 #authorized = []
 
@@ -79,3 +85,13 @@ def whoIs(target_id):
         logger.warning('%s was not found in address book.' % target_id)
         return target_id
 
+def getID(person):
+    if person in address_book:
+        return address_book.get(person)
+    else:
+        return person
+
+def inform(bot, people, message):
+    for person in people:
+        bot.sendMessage(getID(person), message)
+        logger.info('Informing %s with \'%s\'' % (person, message))

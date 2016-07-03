@@ -26,7 +26,7 @@ We will only add the freshman's first name, ***unless*** there is another freshm
 | Abhi Parikh                         | `Abhi`                                                             |
 | Nguyen Dinh Viet Anh                | `Anh` (check with the student for which is the correct first name) |
 
-In the event that some freshies have the same first name, you may append their last name.
+In the event that some freshies have the same first name, you may append their last name. If that still isn't enough, add their middle/Chinese names.
 
 ## Commands
 This list is not exhaustive as I haven't finished writing the program but it should provide basic functionality.
@@ -44,22 +44,23 @@ Usage: `/add house name`
 
 `house` can only be `black`, `purple`, `red`, `blue`, `orange`, `green`. Anything else is rejected.
 
-e.g. `/add black darren`
-This adds a freshie called `darren wee` under `black` house.
+#### Examples
+1. `/add black darren`
+This adds a freshie called `darren` under `black` house.
 
-e.g. `/add orange jiahao`
-This adds a freshie called `jiahao tan` under `orange` house.
+2. `/add orange jiahao`
+This adds a freshie called `jiahao` under `orange` house.
 
-e.g. `/add green ryan paul augustus isabellerina lim`
+3. `/add green ryan paul augustus isabellerina lim`
 This adds a freshie called `ryan paul augustus isabellarina lim` under `green` house.
 
-e.g. `/add nox darren wee`
-Command is rejected and no one is added. Do not use OG names.
+4. `/add nox darren wee`
+Command is rejected and no one is added. **Do not use OG names.**
 
 ### `/remove`
 Usage: `/remove house name`
 
-Similar to `/add` but does the opposite operation by removing someone instead.
+Similar to `/add` but does the opposite operation by removing someone instead and by whom.
 
 The name and house must be an exact match. Use `/find` or `/enum` to get back the exact name.
 
@@ -73,19 +74,13 @@ This gives you a list of everyone in `house` that are `present` or `absent`.
 
 `house` can only be `black`, `purple`, `red`, `blue`, `orange`, `green` and `all`. Anything else is rejected.
 
-e.g. `/enum black`
-This gives you a list of all members of `black` who are `present`.
-
-e.g. `/enum red`
-This gives you a list of all members of `red` who are `absent`.
-
 e.g. `/enum blue`
 This gives you a list of all members of `blue` who are `present` or `absent`.
 
 e.g. `/enum all`
 This gives you a list of every freshie registered in VOGLBot. Try not to do this as the message can get very long and flood your phone.
 
-The list is sorted by name.
+The list is sorted by name and separated by their attendance.
 
 ### `/find`
 Usage: `/find house searchpattern`
@@ -103,12 +98,51 @@ e.g. `/find black darren wee`
 This returns a list of people in `black` house with `darren wee` inside the name (probably only 1 person called `darren wee`).
 
 ### `/vfind`
-Usage is the same as `/find` but returns more details of the freshie, e.g. diet and medical info, who added this freshie.
+Usage is the same as `/find` but returns more details of the freshie, e.g. dietary restriction, medical info, who added this freshie.
 
 ### `/in` and `/out`
 Usage: `/in house name` or `/out house name`
 
 This changes the `status` of a freshie between `present` and `absent`. The commands should be self explanatory.
+
+This command will inform Yuchuan upon attendance changes.
+
+### `/log`
+Usage: `/log house name`
+
+`house` can only be `black`, `purple`, `red`, `blue`, `orange`, `green` and `all`. Anything else is rejected.
+
+`name` must be an exact match.
+
+This command returns the status log of a freshman `name` from `house`. This will give you the timestamp of all the times `name`'s attendance was changed and by whom.
+
+### `/medical`
+Usage: `/medical house name: message`
+
+(you must have the colon to delimit the start of the message!)
+
+`house` can only be `black`, `purple`, `red`, `blue`, `orange`, or `green`. Anything else is rejected.
+
+`name` must be an exact match.
+
+`message` can be arbitrarily long.
+
+Note that this command will replace whatever is listed under the `medical` field when you use `/vfind` to retrieve the database entry.
+
+This command will inform Yuchuan upon changes.
+
+### `/diet`
+Usage: `/diet house name: message`
+
+(you must have the colon to delimit the start of the message!)
+
+`house` can only be `black`, `purple`, `red`, `blue`, `orange`, or `green`. Anything else is rejected.
+
+`name` must be an exact match.
+
+`message` can be arbitrarily long. I suggest using something easy to remember like `Halal`, `Vegetarian`, `No beef`.
+
+Note that this command will replace whatever is listed under the `diet` field when you use `/vfind` to retrieve the entry.
 
 ## If Something Breaks
 If any commands or the bot misbehaves, e.g. it doesn't do what you want it to do, please note down:
